@@ -3,6 +3,7 @@
 import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { fetchRetry } from './net.js';
 
 export const CACHE_DIR = path.resolve(process.env.CACHE_DIR || 'cache');
 const DIRS = { json: 'json', photos: 'photos' };
@@ -78,7 +79,7 @@ export async function loadPhoto(id) {
 
 /** Downloads a result image (or video) into the photo store so it can be chained into further tasks. */
 export async function downloadPhoto(url, fallbackType = 'image/jpeg') {
-  const res = await fetch(url);
+  const res = await fetchRetry(url, undefined, { idempotent: true });
   if (!res.ok) throw new Error(`Downloading result failed (${res.status})`);
   const served = res.headers.get('content-type')?.split(';')[0];
   const contentType = served && served !== 'application/octet-stream' && served !== 'binary/octet-stream' ? served : fallbackType;

@@ -4,16 +4,17 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { CACHE_DIR, savePhoto, loadPhoto } from './cache.js';
 import * as agent from './agent.js';
+import { fetchRetry } from './net.js';
 
 const TOKEN = () => process.env.YOUCAM_TELEGRAM_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN;
 const api = (method) => `https://api.telegram.org/bot${TOKEN()}/${method}`;
 
 async function call(method, body) {
   const isForm = body instanceof FormData;
-  const res = await fetch(api(method), {
+  const res = await fetchRetry(api(method), {
     method: 'POST',
     ...(isForm ? { body } : { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }),
-  });
+  }, { idempotent: /^get/.test(method) });
   const json = await res.json();
   if (!json.ok) throw Object.assign(new Error(`Telegram ${method}: ${json.description}`), { code: json.error_code });
   return json.result;
@@ -123,7 +124,7 @@ const MEDIA_TOOLS = new Set(['try_on', 'try_on_reference', 'try_color', 'try_ban
 
 async function downloadTelegramFile(fileId, contentType = 'image/jpeg') {
   const file = await call('getFile', { file_id: fileId });
-  const res = await fetch(`https://api.telegram.org/file/bot${TOKEN()}/${file.file_path}`);
+  const res = await fetchRetry(`https://api.telegram.org/file/bot${TOKEN()}/${file.file_path}`, undefined, { idempotent: true });
   if (!res.ok) throw new Error(`Downloading photo failed (${res.status})`);
   return savePhoto(Buffer.from(await res.arrayBuffer()), contentType);
 }

@@ -1,11 +1,13 @@
 // Local context: climate (Open-Meteo, numeric and keyless) and live web search
 // for stylists and products (Tavily).
 import { memo, keyOf } from './cache.js';
+import { fetchRetry } from './net.js';
 
 const HOUR = 3600_000;
 
 async function getJson(url, init) {
-  const res = await fetch(url, init);
+  // Weather lookups and searches have no side effects.
+  const res = await fetchRetry(url, init, { idempotent: true });
   if (!res.ok) throw new Error(`${new URL(url).host} request failed (${res.status})`);
   return res.json();
 }

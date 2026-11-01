@@ -1,6 +1,8 @@
 // Thin client for the YouCam V2 API: upload a file, start a task, poll until done.
 // Docs: https://yce.perfectcorp.com/document/index.html
 
+import { fetchRetry } from './net.js';
+
 const BASE = 'https://yce-api-01.makeupar.com/s2s';
 
 // Reference-image hairstyle transfer only exists on v2.1; everything else we use is v2.0.
@@ -19,11 +21,11 @@ export class YouCamError extends Error {
 async function call(method, path, body) {
   const key = process.env.YOUCAM_API_KEY;
   if (!key) throw new YouCamError('YOUCAM_API_KEY is not set');
-  const res = await fetch(`${BASE}${path}`, {
+  const res = await fetchRetry(`${BASE}${path}`, {
     method,
     headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
     body: body ? JSON.stringify(body) : undefined,
-  });
+  }, { idempotent: method === 'GET' });
   const json = await res.json().catch(() => ({}));
   if (!res.ok || (json.status && json.status >= 400)) {
     throw new YouCamError(json.error || `YouCam ${method} ${path} failed (${res.status})`, {
@@ -44,7 +46,7 @@ export async function uploadFile(feature, buffer, contentType = 'image/jpeg') {
   const req = file.requests[0];
   // fetch computes Content-Length itself and rejects a mismatched one, so drop it.
   const { 'Content-Length': _, ...headers } = req.headers || {};
-  const put = await fetch(req.url, { method: req.method || 'PUT', headers, body: buffer });
+  const put = await fetchRetry(req.url, { method: req.method || 'PUT', headers, body: buffer }, { idempotent: true });
   if (!put.ok) throw new YouCamError(`Upload for ${feature} failed (${put.status})`, { feature });
   return file.file_id;
 }
