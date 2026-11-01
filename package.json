@@ -1,0 +1,16 @@
+{
+  "name": "haircam",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Visualize and plan a haircut before you commit, powered by the YouCam API.",
+  "scripts": {
+    "start": "node --env-file=.env server/index.js",
+    "dev": "node --env-file=.env --watch server/index.js",
+    "smoke": "node --env-file=.env scripts/smoke.js"
+  },
+  "engines": { "node": ">=20.6" },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}

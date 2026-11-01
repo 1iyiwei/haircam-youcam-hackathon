@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HairCam</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>HairCam</h1>
+    <p>See the cut before you commit — on your face, in your weather, as it grows out.</p>
+  </header>
+
+  <main>
+    <section id="setup" class="card">
+      <h2>1. You</h2>
+      <label>Selfie (front-facing, hair visible)
+        <input id="photo" type="file" accept="image/jpeg,image/png" />
+      </label>
+      <img id="photoPreview" class="thumb" hidden alt="Your selfie" />
+      <div class="row">
+        <label>City <input id="city" placeholder="e.g. Taipei" /></label>
+        <label>Styles
+          <select id="set">
+            <option value="">Auto</option>
+            <option value="female">Feminine</option>
+            <option value="male">Masculine</option>
+            <option value="any">All</option>
+          </select>
+        </label>
+        <label>Max upkeep
+          <select id="upkeep">
+            <option value="1">Wash and go</option>
+            <option value="2" selected>Some styling</option>
+            <option value="3">Daily styling is fine</option>
+          </select>
+        </label>
+        <label class="check"><input id="active" type="checkbox" /> I do sports</label>
+      </div>
+      <button id="analyzeBtn" disabled>Analyze my hair</button>
+      <p id="status" class="status"></p>
+    </section>
+
+    <section id="profileCard" class="card" hidden>
+      <h2>2. Your hair profile</h2>
+      <dl id="profile"></dl>
+      <p id="climate" class="muted"></p>
+    </section>
+
+    <section id="recsCard" class="card" hidden>
+      <h2>3. Styles for you</h2>
+      <div id="recs" class="grid"></div>
+    </section>
+
+    <section id="tryCard" class="card" hidden>
+      <h2>4. Live with it</h2>
+      <div class="compare">
+        <figure><img id="before" alt="Before" /><figcaption>Now</figcaption></figure>
+        <figure><img id="after" alt="Try-on" /><figcaption id="afterCaption">Salon day</figcaption></figure>
+      </div>
+      <div class="row">
+        <button id="humidBtn">Typical day in my city</button>
+        <button id="growBtn">Grow-out</button>
+        <button id="stylistBtn">Find stylists</button>
+      </div>
+      <div id="extra" class="grid"></div>
+      <div id="stylists"></div>
+    </section>
+
+    <section id="productsCard" class="card" hidden>
+      <h2>Products for your hair</h2>
+      <div id="products"></div>
+    </section>
+  </main>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
