@@ -3,6 +3,7 @@
 //   npm run smoke -- --photo me.jpg      also runs the YouCam detectors (spends units, then cached)
 //     add --left l.jpg --right r.jpg (45° views) for hair type and frizz; --set male|female|any
 //   npm run smoke -- --photo me.jpg --try female_curly_bob   plus one try-on
+import '../server/env.js';
 import { readFile } from 'node:fs/promises';
 import { parseArgs } from 'node:util';
 import * as pipeline from '../server/pipeline.js';

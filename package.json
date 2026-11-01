@@ -5,11 +5,11 @@
   "type": "module",
   "description": "Visualize and plan a haircut before you commit, powered by the YouCam API.",
   "scripts": {
-    "start": "node --env-file=.env server/index.js",
-    "dev": "node --env-file=.env --watch server/index.js",
-    "smoke": "node --env-file=.env scripts/smoke.js"
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "smoke": "node scripts/smoke.js"
   },
-  "engines": { "node": ">=20.6" },
+  "engines": { "node": ">=22" },
   "dependencies": {
     "express": "^4.21.2"
   }

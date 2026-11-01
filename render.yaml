@@ -1,0 +1,27 @@
+# Render Blueprint: https://render.com/docs/blueprint-spec
+# The persistent disk keeps the YouCam result cache (and demo videos) across deploys
+# and restarts. Disks need a paid instance; on the free plan, delete `disk` and
+# CACHE_DIR, and expect every result to be paid for again after each restart.
+services:
+  - type: web
+    name: haircam
+    runtime: node
+    plan: starter
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: CACHE_DIR
+        value: /var/data/cache
+      - key: YOUCAM_API_KEY
+        sync: false
+      - key: TAVILY_API_KEY
+        sync: false
+      - key: APP_PASSCODE
+        sync: false
+    disk:
+      name: haircam-cache
+      mountPath: /var/data
+      sizeGB: 1

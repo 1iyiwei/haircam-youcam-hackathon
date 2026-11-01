@@ -12,8 +12,20 @@ npm install
 npm start              # http://localhost:3000
 ```
 
+Set `APP_PASSCODE` to require a passcode (browser sign-in prompt, any username). Use it for any
+public deployment, so strangers can't spend your YouCam units.
+
 `npm run smoke` checks templates, climate, search and the recommender, and spends no YouCam units.
 `npm run smoke -- --photo me.jpg --try female_curly_bob` also runs the detectors and one try-on.
+
+## Deploy on Render
+
+`render.yaml` is a Render Blueprint: in Render, choose **New → Blueprint**, pick this repo, then fill
+in `YOUCAM_API_KEY`, `TAVILY_API_KEY` and `APP_PASSCODE`. It mounts a 1 GB disk at `/var/data` for
+the result cache, which needs a paid instance (Starter). On the free plan, remove `disk` and
+`CACHE_DIR`. Free instances also sleep after ~15 idle minutes, and the cache is lost on every
+restart, so open the app before a demo and expect to pay again for results.
+Render serves https, which the browser camera needs.
 
 ## Pipeline
 

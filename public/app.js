@@ -265,7 +265,9 @@ $('growBtn').addEventListener('click', (e) =>
 $('moveBtn').addEventListener('click', (e) =>
   busy(e.target, 'Filming a 5-second head turn (usually 5–8 minutes)…', async () => {
     const motion = $('motion');
-    const out = await api('/api/animate', { photoId: state.tryOn.photoId, motion: motion.value });
+    let out;
+    do out = await api('/api/animate', { photoId: state.tryOn.photoId, motion: motion.value });
+    while (out.pending);
     const video = el('video', { src: out.url, controls: true, autoplay: true, loop: true, muted: true, playsInline: true });
     $('extra').replaceChildren(el('figure', {}, video, el('figcaption', {}, `${state.tryOn.template.title}: ${motion.selectedOptions[0].textContent.toLowerCase()}`)));
   }),
