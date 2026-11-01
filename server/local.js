@@ -69,13 +69,14 @@ export function stylists({ city, style, hairType }) {
 }
 
 /** Care products for this hair profile and climate. */
-export function products({ hairType, frizziness, density, frizzRisk }) {
+export function products({ hairType, frizziness, density, frizzRisk, style }) {
   const needs = [
     hairType && `${hairType.toLowerCase()} hair`,
     density && /low/i.test(density) && 'fine thin hair volume',
     (frizzRisk === 'high' || /frizzy/i.test(frizziness || '')) && !/not/i.test(frizziness || '') && 'anti-frizz humidity',
   ].filter(Boolean);
-  return tavily(`best shampoo, conditioner and styling products for ${needs.join(', ') || 'healthy hair'} to buy online`, {
+  const look = style ? ` to maintain a ${style.toLowerCase()} look` : '';
+  return tavily(`best shampoo, conditioner and styling products for ${needs.join(', ') || 'healthy hair'}${look} to buy online`, {
     topic: 'general',
   });
 }

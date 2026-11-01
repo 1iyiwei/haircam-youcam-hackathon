@@ -1,6 +1,6 @@
 import express from 'express';
 import path from 'node:path';
-import { savePhoto, loadPhoto } from './cache.js';
+import { savePhoto, photoFile } from './cache.js';
 import * as pipeline from './pipeline.js';
 import { recommend } from './recommend.js';
 import * as local from './local.js';
@@ -36,8 +36,8 @@ app.post(
 
 app.get('/api/photos/:id', async (req, res) => {
   try {
-    const { buffer, contentType } = await loadPhoto(req.params.id);
-    res.type(contentType).set('Cache-Control', 'public, max-age=31536000, immutable').send(buffer);
+    const file = await photoFile(req.params.id);
+    res.sendFile(file.path, { headers: { 'Content-Type': file.contentType }, maxAge: '1y', immutable: true });
   } catch (err) {
     res.status(err.status || 400).json({ error: err.message });
   }
@@ -45,7 +45,7 @@ app.get('/api/photos/:id', async (req, res) => {
 
 app.post('/api/analyze', route(async (req) => {
   need(req.body, 'photoId');
-  return pipeline.analyze(req.body.photoId, req.body.anglePhotoIds);
+  return pipeline.analyze(req.body.photoId, req.body);
 }));
 
 app.get('/api/templates/:feature', route((req) => pipeline.templates(req.params.feature)));
@@ -70,6 +70,12 @@ app.post('/api/humid-day', route(async (req) => {
 app.post('/api/grow-out', route(async (req) => {
   need(req.body, 'photoId');
   return pipeline.growOut(req.body.photoId);
+}));
+
+// Costs more units than an image; only runs when the user asks.
+app.post('/api/animate', route(async (req) => {
+  need(req.body, 'photoId');
+  return pipeline.animate(req.body.photoId);
 }));
 
 app.get('/api/climate', route(async (req) => {

@@ -8,9 +8,11 @@ const GROWTH_CM_PER_MONTH = 1.25;
  * @param profile   output of pipeline.analyze()
  * @param climate   output of local.climate(), optional
  * @param prefs     { set: 'female'|'male'|'any', upkeep: 1-3 (max acceptable), active: bool, limit }
+ *                  The user picks the set; we don't infer it from detected gender.
  */
 export function recommend(profile, climate, prefs = {}) {
-  const set = prefs.set || (profile.gender === 'male' ? 'male' : profile.gender === 'female' ? 'female' : 'any');
+  const set = ['female', 'male'].includes(prefs.set) ? prefs.set : 'any';
+  const limit = prefs.limit ?? 6;
   const maxUpkeep = prefs.upkeep ?? 3;
   const hairLevel = HAIR_TYPE_LEVEL[profile.hairType?.mapping];
   const currentCm = DETECTED_LENGTH_CM[profile.hairLength];
@@ -102,7 +104,14 @@ export function recommend(profile, climate, prefs = {}) {
   });
 
   ranked.sort((a, b) => b.score - a.score || a.regrowMonths - b.regrowMonths);
-  return { set, styles: ranked.slice(0, prefs.limit ?? 6) };
+  if (set !== 'any') return { set, styles: ranked.slice(0, limit) };
+  // The female set is twice as large, so take turns between sets to keep "All" balanced.
+  const bySet = ['male', 'female'].map((g) => ranked.filter((r) => r.templateId.startsWith(`${g}_`)));
+  const styles = [];
+  for (let i = 0; styles.length < limit && i < ranked.length; i++) {
+    for (const list of bySet) if (list[i] && styles.length < limit) styles.push(list[i]);
+  }
+  return { set, styles };
 }
 
 /**

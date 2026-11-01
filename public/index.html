@@ -15,17 +15,31 @@
   <main>
     <section id="setup" class="card">
       <h2>1. You</h2>
-      <label>Selfie (front-facing, hair visible)
-        <input id="photo" type="file" accept="image/jpeg,image/png" />
-      </label>
-      <img id="photoPreview" class="thumb" hidden alt="Your selfie" />
+      <p class="muted">Face the camera straight on, with your face filling about half to most of the frame width and your hairline visible.</p>
+      <div class="row">
+        <label>Front selfie
+          <input id="photo" type="file" accept="image/jpeg,image/png" />
+        </label>
+        <label>Left 45° (optional)
+          <input id="photoLeft" type="file" accept="image/jpeg,image/png" />
+        </label>
+        <label>Right 45° (optional)
+          <input id="photoRight" type="file" accept="image/jpeg,image/png" />
+        </label>
+      </div>
+      <p class="muted">Side photos unlock hair type and frizz detection.</p>
+      <div class="row">
+        <img id="photoLeftPreview" class="thumb" hidden alt="Left view" />
+        <img id="photoPreview" class="thumb" hidden alt="Your selfie" />
+        <img id="photoRightPreview" class="thumb" hidden alt="Right view" />
+      </div>
       <div class="row">
         <label>City <input id="city" placeholder="e.g. Taipei" /></label>
         <label>Styles
-          <select id="set">
-            <option value="">Auto</option>
-            <option value="female">Feminine</option>
+          <select id="set" required>
+            <option value="" disabled selected>Choose…</option>
             <option value="male">Masculine</option>
+            <option value="female">Feminine</option>
             <option value="any">All</option>
           </select>
         </label>
@@ -62,16 +76,15 @@
       <div class="row">
         <button id="humidBtn">Typical day in my city</button>
         <button id="growBtn">Grow-out</button>
+        <button id="moveBtn">See it move</button>
         <button id="stylistBtn">Find stylists</button>
+        <button id="productBtn">Find products</button>
       </div>
       <div id="extra" class="grid"></div>
       <div id="stylists"></div>
-    </section>
-
-    <section id="productsCard" class="card" hidden>
-      <h2>Products for your hair</h2>
       <div id="products"></div>
     </section>
+
   </main>
   <script type="module" src="app.js"></script>
 </body>

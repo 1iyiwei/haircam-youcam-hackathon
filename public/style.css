@@ -47,7 +47,7 @@ dt { color: var(--muted); }
 dd { margin: 0; }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
 .style { border: 1px solid var(--border); border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 6px; }
-.style img, figure img { width: 100%; border-radius: 8px; aspect-ratio: 3 / 4; object-fit: cover; background: var(--border); }
+.style img, figure img, figure video { width: 100%; border-radius: 8px; aspect-ratio: 3 / 4; object-fit: cover; background: var(--border); }
 .style h3 { margin: 0; font-size: 1rem; }
 .style ul { margin: 0; padding-left: 18px; font-size: 0.85rem; }
 .pro { color: var(--good); }
@@ -58,3 +58,4 @@ figcaption { text-align: center; color: var(--muted); font-size: 0.9rem; }
 .result { margin: 8px 0; }
 .result a { color: var(--accent); }
 .result p { margin: 2px 0 0; font-size: 0.9rem; color: var(--muted); }
+input[type="file"] { max-width: 100%; }

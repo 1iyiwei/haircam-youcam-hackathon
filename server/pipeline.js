@@ -14,17 +14,26 @@ function fileIdFor(photoId, feature) {
   }, FILE_ID_MAX_AGE);
 }
 
-function detect(feature, body) {
-  return memo(keyOf('detect', feature, body), () => youcam.runTask(feature, body));
+// Photo-quality errors (face too small, wrong angle, ...) won't change on retry, so they
+// are cached like results; transient failures are not.
+async function detect(feature, body) {
+  const out = await memo(keyOf('detect', feature, body), () =>
+    youcam.runTask(feature, body).catch((err) => {
+      if (err.code?.startsWith('error_') && err.code !== 'error_inference') return { error: { message: err.message, code: err.code } };
+      throw err;
+    }),
+  );
+  if (out.error) throw new youcam.YouCamError(out.error.message, { code: out.error.code, feature });
+  return out;
 }
 
 /**
- * Builds a hair profile from one selfie. Hair type and frizziness ask for three
- * angles; with only one photo we send it three times.
+ * Builds a hair profile from a front selfie. Hair type and frizziness need three
+ * views (left 45°, front, right 45°) and are skipped without the side photos.
  * Costs one task per detector on first run; cached afterwards.
  */
-export async function analyze(photoId, anglePhotoIds = []) {
-  const angles = [photoId, ...anglePhotoIds].concat([photoId, photoId]).slice(0, 3);
+export async function analyze(photoId, { leftPhotoId, rightPhotoId } = {}) {
+  const angles = leftPhotoId && rightPhotoId ? [leftPhotoId, photoId, rightPhotoId] : null;
   const ids = (feature) => Promise.all(angles.map((id) => fileIdFor(id, feature)));
 
   const jobs = {
@@ -33,14 +42,15 @@ export async function analyze(photoId, anglePhotoIds = []) {
         src_file_id: await fileIdFor(photoId, 'face-attr-analysis'),
         features: ['faceShape', 'age', 'gender', 'hairColor'],
       }),
-    hairType: async () => detect('hair-type-detection', { src_file_ids: await ids('hair-type-detection') }),
     hairLength: async () =>
       detect('hair-length-detection', { src_file_id: await fileIdFor(photoId, 'hair-length-detection') }),
-    frizziness: async () =>
-      detect('hair-frizziness-detection', { src_file_ids: await ids('hair-frizziness-detection') }),
     density: async () =>
       detect('hair-density-detection', { src_file_id: await fileIdFor(photoId, 'hair-density-detection') }),
   };
+  if (angles) {
+    jobs.hairType = async () => detect('hair-type-detection', { src_file_ids: await ids('hair-type-detection') });
+    jobs.frizziness = async () => detect('hair-frizziness-detection', { src_file_ids: await ids('hair-frizziness-detection') });
+  }
 
   const names = Object.keys(jobs);
   const settled = await Promise.allSettled(names.map((n) => jobs[n]()));
@@ -50,6 +60,10 @@ export async function analyze(photoId, anglePhotoIds = []) {
     if (r.status === 'fulfilled') raw[names[i]] = r.value;
     else errors[names[i]] = { message: r.reason.message, code: r.reason.code };
   });
+  if (!angles) {
+    const skipped = { message: 'Add left and right 45° photos to detect this', code: 'needs_side_photos' };
+    errors.hairType = errors.frizziness = skipped;
+  }
 
   const face = raw.face || {};
   return {
@@ -87,6 +101,35 @@ export function generate(photoId, feature, params = {}) {
     const result = await youcam.runTask(feature, body);
     const resultPhotoId = await downloadPhoto(result.url);
     return { photoId: resultPhotoId, url: `/api/photos/${resultPhotoId}`, feature, params, sourcePhotoId: photoId };
+  });
+}
+
+// A slow head turn shows the cut from the sides, which a still try-on can't.
+const MOTION_PROMPT =
+  'The person slowly turns their head about 30 degrees to the left, then about 30 degrees to the right, ' +
+  'then back to face the camera. Calm, steady motion. The hair stays neatly in place and moves only with the head. ' +
+  'Keep the face, hairstyle, hair color and background unchanged.';
+const MOTION_NEGATIVE =
+  'wind, hair blowing, hair flipping, fast motion, shaking, changing hairstyle, changing hair color, distorted face, extra people, low quality';
+
+/** Short video of a (try-on) photo, via YouCam AI Image to Video Generator V2. */
+export function animate(photoId, { duration = 5, resolution = 480 } = {}) {
+  const feature = 'image-to-video/youcam';
+  return memo(keyOf('animate', photoId, duration, resolution, MOTION_PROMPT), async () => {
+    const result = await youcam.runTask(
+      feature,
+      {
+        src_file_id: await fileIdFor(photoId, feature),
+        model: 'youcam-video-v2',
+        resolution: String(resolution), // the API rejects a numeric resolution
+        dst_duration: duration,
+        prompt: MOTION_PROMPT,
+        negative_prompt: MOTION_NEGATIVE,
+      },
+      { intervalMs: 5000, timeoutMs: 15 * 60_000 }, // typically takes 5-8 minutes
+    );
+    const videoId = await downloadPhoto(result.url, 'video/mp4');
+    return { photoId: videoId, url: `/api/photos/${videoId}`, sourcePhotoId: photoId, duration, resolution };
   });
 }
 

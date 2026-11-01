@@ -26,6 +26,7 @@ npm start              # http://localhost:3000
 | Try-on | YouCam `hair-style` (templates), `hair-transfer` v2.1 (reference photo), `hair-color`, `hair-bang` |
 | Typical humid day | YouCam `hair-vol` → `hair-curl`, chained onto the try-on result |
 | Grow-out | YouCam `hair-ext` stages chained onto the try-on result |
+| Turn-your-head video | YouCam `image-to-video/youcam` (Image to Video V2) on the try-on result |
 | Stylists and products | Tavily search |
 
 All YouCam results are cached under `cache/` by photo and parameters, so each one is paid for once.
@@ -35,11 +36,12 @@ All YouCam results are cached under `cache/` by photo and parameters, so each on
 | Route | Body / query |
 |---|---|
 | `POST /api/photos` | raw JPEG/PNG → `{ photoId, url }` |
-| `POST /api/analyze` | `{ photoId, anglePhotoIds? }` → profile |
+| `POST /api/analyze` | `{ photoId, leftPhotoId?, rightPhotoId? }` → profile |
 | `POST /api/recommend` | `{ profile, climate?, prefs: { city?, set?, upkeep?, active? } }` |
 | `POST /api/generate` | `{ photoId, feature, params }` → `{ photoId, url }` |
 | `POST /api/humid-day` | `{ photoId, profile, climate }` |
 | `POST /api/grow-out` | `{ photoId }` |
+| `POST /api/animate` | `{ photoId }` → 5 s, 480p video `{ photoId, url }` |
 | `GET /api/climate` | `?city=` |
 | `GET /api/stylists` | `?city=&style=&hairType=` |
 | `GET /api/products` | `?hairType=&frizziness=&density=&frizzRisk=` |

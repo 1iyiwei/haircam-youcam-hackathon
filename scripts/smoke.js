@@ -1,6 +1,7 @@
 // Checks the pipeline end to end.
 //   npm run smoke                        free calls only (templates, climate, search, recommender)
-//   npm run smoke -- --photo me.jpg      also runs the 5 YouCam detectors (spends units, then cached)
+//   npm run smoke -- --photo me.jpg      also runs the YouCam detectors (spends units, then cached)
+//     add --left l.jpg --right r.jpg (45° views) for hair type and frizz; --set male|female|any
 //   npm run smoke -- --photo me.jpg --try female_curly_bob   plus one try-on
 import { readFile } from 'node:fs/promises';
 import { parseArgs } from 'node:util';
@@ -11,7 +12,10 @@ import * as local from '../server/local.js';
 import { savePhoto } from '../server/cache.js';
 
 const { values: args } = parseArgs({
-  options: { photo: { type: 'string' }, city: { type: 'string', default: 'Taipei' }, try: { type: 'string' } },
+  options: {
+    photo: { type: 'string' }, left: { type: 'string' }, right: { type: 'string' },
+    city: { type: 'string', default: 'Taipei' }, set: { type: 'string', default: 'any' }, try: { type: 'string' },
+  },
 });
 
 const step = async (name, fn) => {
@@ -41,13 +45,15 @@ let profile = {
   hairLength: 'above chest', frizziness: { mapping: 2, term: 'Frizzy' }, hairDensity: 'Low Density',
 };
 let photoId;
+const store = async (file) => file && savePhoto(await readFile(file), file.endsWith('.png') ? 'image/png' : 'image/jpeg');
 if (args.photo) {
-  photoId = await savePhoto(await readFile(args.photo), args.photo.endsWith('.png') ? 'image/png' : 'image/jpeg');
-  profile = (await step('Analyze photo (5 YouCam detectors)', () => pipeline.analyze(photoId))) ?? profile;
+  photoId = await store(args.photo);
+  const sides = { leftPhotoId: await store(args.left), rightPhotoId: await store(args.right) };
+  profile = (await step('Analyze photo (YouCam detectors)', () => pipeline.analyze(photoId, sides))) ?? profile;
 }
 console.log('  profile:', JSON.stringify(profile));
 
-const recs = recommend(profile, climate, { upkeep: 2 });
+const recs = recommend(profile, climate, { upkeep: 2, set: args.set });
 console.log(`✔ Recommend (${recs.set})`);
 for (const s of recs.styles) console.log(`  ${s.score.toFixed(1).padStart(5)}  ${s.templateId}  +${s.pros.length}/-${s.cons.length}  ${s.cons.join('; ')}`);
 

@@ -1,6 +1,6 @@
 const $ = (id) => document.getElementById(id);
 
-const state = { photoId: null, profile: null, climate: null, tryOn: null, templates: {} };
+const state = { photoId: null, leftPhotoId: null, rightPhotoId: null, profile: null, climate: null, tryOn: null, templates: {} };
 
 // Tiny DOM builder; text is always set via textContent (search snippets are untrusted).
 function el(tag, props = {}, ...children) {
@@ -20,15 +20,24 @@ function status(msg) {
   $('status').textContent = msg;
 }
 
+// Reports progress in the clicked button's own card, where the user is looking.
 async function busy(button, msg, fn) {
+  const card = button.closest('.card');
+  const line = card.querySelector('.status') || card.appendChild(el('p', { className: 'status' }));
   button.disabled = true;
-  status(msg);
+  line.textContent = msg;
+  const start = Date.now();
+  const timer = setInterval(() => {
+    const secs = Math.round((Date.now() - start) / 1000);
+    line.textContent = `${msg} ${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
+  }, 1000);
   try {
     await fn();
-    status('');
+    line.textContent = '';
   } catch (err) {
-    status(`⚠️ ${err.message}`);
+    line.textContent = `⚠️ ${err.message}`;
   } finally {
+    clearInterval(timer);
     button.disabled = false;
   }
 }
@@ -45,25 +54,30 @@ async function resize(file, maxSide = 2048) {
   return new Promise((r) => canvas.toBlob(r, 'image/jpeg', 0.92));
 }
 
-$('photo').addEventListener('change', async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  status('Uploading…');
-  const blob = await resize(file);
-  const res = await fetch('/api/photos', { method: 'POST', headers: { 'Content-Type': 'image/jpeg' }, body: blob });
-  const { photoId, url } = await res.json();
-  state.photoId = photoId;
-  $('photoPreview').src = url;
-  $('photoPreview').hidden = false;
-  $('analyzeBtn').disabled = false;
-  status('');
-});
+// Front photo is required; left/right 45° views are optional extras for hair type and frizz.
+const photoInputs = { photo: 'photoId', photoLeft: 'leftPhotoId', photoRight: 'rightPhotoId' };
+for (const [input, key] of Object.entries(photoInputs)) {
+  $(input).addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    status('Uploading…');
+    const blob = await resize(file);
+    const res = await fetch('/api/photos', { method: 'POST', headers: { 'Content-Type': 'image/jpeg' }, body: blob });
+    const { photoId, url } = await res.json();
+    state[key] = photoId;
+    $(`${input}Preview`).src = url;
+    $(`${input}Preview`).hidden = false;
+    $('analyzeBtn').disabled = !state.photoId;
+    status('');
+  });
+}
 
 $('analyzeBtn').addEventListener('click', (e) =>
   busy(e.target, 'Analyzing face shape, hair type, length, frizz and density…', async () => {
+    if (!$('set').value) throw new Error('Choose which styles to show');
     const city = $('city').value.trim();
     const [profile, climate] = await Promise.all([
-      api('/api/analyze', { photoId: state.photoId }),
+      api('/api/analyze', { photoId: state.photoId, leftPhotoId: state.leftPhotoId, rightPhotoId: state.rightPhotoId }),
       city ? api(`/api/climate?city=${encodeURIComponent(city)}`) : null,
     ]);
     state.profile = profile;
@@ -71,9 +85,18 @@ $('analyzeBtn').addEventListener('click', (e) =>
     renderProfile();
     status('Picking styles…');
     await renderRecs();
-    loadProducts();
   }),
 );
+
+// Plain-language fixes for the YouCam detector errors we see most.
+const PHOTO_TIPS = {
+  needs_side_photos: 'Add left and right 45° photos to detect hair type and frizz.',
+  error_face_position_too_small: 'Move closer: your face should fill about half the photo width.',
+  error_face_angle_invalid: 'Face the camera straight on (side photos: turn about 45°).',
+  error_large_face_angle: 'Face the camera straight on.',
+  error_no_face: 'No face found; use a well-lit, unobstructed selfie.',
+  error_multiple_people: 'Only one person should be in the photo.',
+};
 
 function renderProfile() {
   const p = state.profile;
@@ -86,8 +109,8 @@ function renderProfile() {
     ['Hair color', p.hairColor],
   ];
   $('profile').replaceChildren(...rows.flatMap(([k, v]) => [el('dt', {}, k), el('dd', {}, v ?? '—')]));
-  const errs = Object.entries(p.errors || {});
-  if (errs.length) $('profile').append(el('dt', {}, 'Skipped'), el('dd', { className: 'con' }, errs.map(([k, e]) => `${k}: ${e.code || e.message}`).join('; ')));
+  const tips = [...new Set(Object.values(p.errors || {}).map((e) => PHOTO_TIPS[e.code] || e.message))];
+  if (tips.length) $('profile').append(el('dt', {}, 'To improve'), el('dd', { className: 'con' }, tips.join(' ')));
   const c = state.climate;
   $('climate').textContent = c
     ? `${c.city}: ${c.humidity}% humidity, dew point ${c.dewPoint}°C over the next week → ${c.frizzRisk} frizz risk.`
@@ -104,7 +127,7 @@ async function templateInfo(id) {
 }
 
 async function renderRecs() {
-  const prefs = { set: $('set').value || undefined, upkeep: Number($('upkeep').value), active: $('active').checked };
+  const prefs = { set: $('set').value, upkeep: Number($('upkeep').value), active: $('active').checked };
   const { styles } = await api('/api/recommend', { profile: state.profile, climate: state.climate, prefs });
   const cards = await Promise.all(
     styles.map(async (s) => {
@@ -131,6 +154,7 @@ function tryOn(button, style, template) {
     $('afterCaption').textContent = `${template.title}: salon day`;
     $('extra').replaceChildren();
     $('stylists').replaceChildren();
+    $('products').replaceChildren();
     $('tryCard').hidden = false;
     $('tryCard').scrollIntoView({ behavior: 'smooth' });
   });
@@ -156,30 +180,36 @@ $('growBtn').addEventListener('click', (e) =>
   }),
 );
 
+$('moveBtn').addEventListener('click', (e) =>
+  busy(e.target, 'Filming a 5-second head turn (usually 5–8 minutes)…', async () => {
+    const out = await api('/api/animate', { photoId: state.tryOn.photoId });
+    const video = el('video', { src: out.url, controls: true, autoplay: true, loop: true, muted: true, playsInline: true });
+    $('extra').replaceChildren(el('figure', {}, video, el('figcaption', {}, `${state.tryOn.template.title}, from every side`)));
+  }),
+);
+
 $('stylistBtn').addEventListener('click', (e) =>
   busy(e.target, 'Searching local stylists…', async () => {
     const city = state.climate?.city || $('city').value.trim();
     if (!city) throw new Error('Add your city first');
     const q = new URLSearchParams({ city, style: state.tryOn.template.title, hairType: state.profile.hairType?.term || '' });
-    $('stylists').replaceChildren(searchResults(await api(`/api/stylists?${q}`)));
+    $('stylists').replaceChildren(el('h3', {}, 'Stylists'), searchResults(await api(`/api/stylists?${q}`)));
   }),
 );
 
-async function loadProducts() {
-  const p = state.profile;
-  const q = new URLSearchParams({
-    hairType: p.hairType?.term || '',
-    frizziness: p.frizziness?.term || '',
-    density: p.hairDensity || '',
-    frizzRisk: state.climate?.frizzRisk || '',
-  });
-  try {
-    $('products').replaceChildren(searchResults(await api(`/api/products?${q}`)));
-    $('productsCard').hidden = false;
-  } catch (err) {
-    console.warn('products', err);
-  }
-}
+$('productBtn').addEventListener('click', (e) =>
+  busy(e.target, 'Searching products for your hair…', async () => {
+    const p = state.profile;
+    const q = new URLSearchParams({
+      hairType: p.hairType?.term || '',
+      frizziness: p.frizziness?.term || '',
+      density: p.hairDensity || '',
+      frizzRisk: state.climate?.frizzRisk || '',
+      style: state.tryOn.template.title,
+    });
+    $('products').replaceChildren(el('h3', {}, 'Products'), searchResults(await api(`/api/products?${q}`)));
+  }),
+);
 
 function figure(src, caption) {
   return el('figure', {}, el('img', { src, alt: caption }), el('figcaption', {}, caption));

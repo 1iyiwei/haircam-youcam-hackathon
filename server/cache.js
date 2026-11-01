@@ -56,6 +56,16 @@ export async function savePhoto(buffer, contentType) {
   return id;
 }
 
+/** Path and content type of a stored photo, for streaming (videos need range requests). */
+export async function photoFile(id) {
+  if (!/^[0-9a-f]{24}$/.test(id)) throw Object.assign(new Error('Invalid photo id'), { status: 400 });
+  const dir = path.join(CACHE_DIR, DIRS.photos);
+  const meta = await readFile(path.join(dir, `${id}.json`), 'utf8').catch(() => {
+    throw Object.assign(new Error('Unknown photo id'), { status: 404 });
+  });
+  return { path: path.join(dir, `${id}.bin`), contentType: JSON.parse(meta).contentType };
+}
+
 export async function loadPhoto(id) {
   if (!/^[0-9a-f]{24}$/.test(id)) throw new Error('Invalid photo id');
   const dir = path.join(CACHE_DIR, DIRS.photos);
@@ -66,10 +76,11 @@ export async function loadPhoto(id) {
   return { buffer, contentType };
 }
 
-/** Downloads a result image into the photo store so it can be chained into further tasks. */
-export async function downloadPhoto(url) {
+/** Downloads a result image (or video) into the photo store so it can be chained into further tasks. */
+export async function downloadPhoto(url, fallbackType = 'image/jpeg') {
   const res = await fetch(url);
-  if (!res.ok) throw new Error(`Downloading result image failed (${res.status})`);
-  const contentType = res.headers.get('content-type')?.split(';')[0] || 'image/jpeg';
+  if (!res.ok) throw new Error(`Downloading result failed (${res.status})`);
+  const served = res.headers.get('content-type')?.split(';')[0];
+  const contentType = served && served !== 'application/octet-stream' && served !== 'binary/octet-stream' ? served : fallbackType;
   return savePhoto(Buffer.from(await res.arrayBuffer()), contentType);
 }
