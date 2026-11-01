@@ -1,7 +1,9 @@
 # Render Blueprint: https://render.com/docs/blueprint-spec
-# The persistent disk keeps the YouCam result cache (and demo videos) across deploys
-# and restarts. Disks need a paid instance; on the free plan, delete `disk` and
-# CACHE_DIR, and expect every result to be paid for again after each restart.
+# The Telegram bot uses a webhook here (Render's URL is detected), so incoming messages
+# wake a sleeping free instance. The persistent disk keeps the YouCam result cache, demo
+# videos and chat sessions across deploys and restarts. Disks need a paid instance; on the
+# free plan, delete `disk` and CACHE_DIR, and expect results to be paid for again after
+# each restart or sleep.
 services:
   - type: web
     name: haircam

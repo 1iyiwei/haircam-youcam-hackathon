@@ -6,7 +6,7 @@ import { savePhoto, photoFile } from './cache.js';
 import * as pipeline from './pipeline.js';
 import { recommend } from './recommend.js';
 import * as local from './local.js';
-import { startTelegram } from './telegram.js';
+import { startTelegram, webhookPath } from './telegram.js';
 
 const app = express();
 
@@ -16,7 +16,8 @@ const PASSCODE = process.env.APP_PASSCODE;
 if (PASSCODE) {
   const expected = Buffer.from(PASSCODE);
   app.use((req, res, next) => {
-    if (req.path === '/healthz') return next();
+    // Telegram can't send the passcode; its webhook is checked by a secret header instead.
+    if (req.path === '/healthz' || req.path === webhookPath()) return next();
     const [scheme, encoded] = (req.get('authorization') || '').split(' ');
     const given = Buffer.from(scheme === 'Basic' && encoded ? Buffer.from(encoded, 'base64').toString().split(':').slice(1).join(':') : '');
     if (given.length === expected.length && timingSafeEqual(given, expected)) return next();
@@ -139,5 +140,5 @@ app.get('/api/products', route((req) => local.products(req.query)));
 const port = Number(process.env.PORT) || 3000;
 app.listen(port, () => console.log(`HairCam on http://localhost:${port}`));
 
-// Only one process may poll a bot: set TELEGRAM_POLLING=off locally while Render runs it.
-if (process.env.TELEGRAM_POLLING !== 'off') startTelegram().catch((err) => console.error('Telegram:', err.message));
+// One server owns the bot: set TELEGRAM_POLLING=off locally while Render runs it (on a webhook).
+if (process.env.TELEGRAM_POLLING !== 'off') startTelegram(app).catch((err) => console.error('Telegram:', err.message));

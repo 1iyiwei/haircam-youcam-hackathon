@@ -23,6 +23,7 @@ npm start              # web app on http://localhost:3000, and the Telegram bot 
 | `OPENAI_API_KEY` | The chat stylist (`OPENAI_MODEL`, default `gpt-5.4-mini`) |
 | `YOUCAM_TELEGRAM_BOT_TOKEN` | The Telegram bot (from @BotFather) |
 | `TELEGRAM_POLLING=off` | Running locally while a deployed server runs the bot |
+| `TELEGRAM_WEBHOOK_URL` | Optional: public base URL for webhook mode outside Render (Render's own URL is detected automatically) |
 | `APP_PASSCODE` | Optional: protects a public deployment (web and bot) so strangers can't spend your YouCam units |
 | `CACHE_DIR` | Optional: where results and chat sessions are stored (default `cache/`) |
 
@@ -60,8 +61,12 @@ Details:
 - **Videos** take 5–8 minutes. The bot says so, keeps chatting, and sends the video when it's ready.
 - **Passcode:** with `APP_PASSCODE` set, the bot asks for it once per chat. Share the deep link
   `https://t.me/HairCamBot?start=<passcode>` to skip that step.
-- **One poller per bot:** Telegram lets only one process poll a bot token. When the deployed server runs the bot,
-  set `TELEGRAM_POLLING=off` locally.
+- **Webhook or polling:** on Render (or with `TELEGRAM_WEBHOOK_URL`) the server registers a Telegram webhook at a
+  secret path, checked with a secret header and exempt from the passcode. Each message is an incoming request, so it
+  also wakes a sleeping free instance. Locally it long-polls instead, so no public URL is needed.
+- **One server per bot:** a bot has either a webhook or one poller. Once Render has set its webhook, a local
+  server refuses to poll (it says so in the log) rather than steal the bot; set `TELEGRAM_POLLING=off` locally to
+  run only the web app. To move the bot back to your machine, call Telegram's `deleteWebhook`.
 
 ## Running a demo
 
@@ -90,10 +95,13 @@ audio track contribute silence. Keep the result under 3 minutes, the judging lim
 
 `render.yaml` is a Render Blueprint: in Render, choose **New → Blueprint**, pick this repo, then fill in
 `YOUCAM_API_KEY`, `TAVILY_API_KEY`, `OPENAI_API_KEY`, `YOUCAM_TELEGRAM_BOT_TOKEN` and `APP_PASSCODE`.
-It mounts a 1 GB disk at `/var/data` for the result cache and chat sessions, which needs a paid instance
-(Starter). A paid instance also keeps the bot awake: polling Telegram doesn't count as incoming traffic, so a
-free instance would fall asleep after ~15 idle minutes and stop answering. On the free plan, remove `disk` and
-`CACHE_DIR`; the cache is then lost on every restart. Render serves https, which the browser camera needs.
+On Render the bot runs on a webhook, which works on every plan: a free instance that went to sleep after ~15
+idle minutes is woken by the next Telegram message, which then waits for a cold start (roughly 30–60 s).
+
+`render.yaml` mounts a 1 GB disk at `/var/data` for the result cache and chat sessions, which needs a paid
+instance (Starter). On the free plan, remove `disk` and `CACHE_DIR`: the cache and conversations are then lost
+whenever the instance restarts or sleeps, so cached results get paid for again. Render serves https, which the
+browser camera needs.
 
 ## Pipeline
 
@@ -123,7 +131,7 @@ nothing is charged or sent twice.
 | File | Role |
 |---|---|
 | `server/index.js` | Express server: web app, REST API, passcode, starts the bot |
-| `server/telegram.js` | Telegram adapter: long polling, per-chat sessions and queues, media upload |
+| `server/telegram.js` | Telegram adapter: webhook or long polling, per-chat sessions and queues, media upload |
 | `server/agent.js` | The stylist: system prompt, tools, conversation loop |
 | `server/llm.js` | OpenAI client |
 | `server/pipeline.js` | Analysis, try-on, chained effects, video motions |
