@@ -121,7 +121,7 @@ Suggested shots:
 \* Video demo link
 This video will be embedded at the top of your project page. Read more about uploading videos.
 
-https://youtube.com/shorts/62dM4N25ozw
+https://youtu.be/DO1TYv7YM1s
 
 # Additional info
 

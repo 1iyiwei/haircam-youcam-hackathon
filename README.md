@@ -1,6 +1,6 @@
 # HairCam — [YouCam API Skin AI & eCommerce VTO Hackathon](https://youcam-api-skin-ai-ecommerce.devpost.com/)
 
-[Ideation](docs/hair.md) · [Submission](docs/submission.md) · [Demo video](https://youtube.com/shorts/62dM4N25ozw) · [Try the bot](https://t.me/HairCamBot)
+[Ideation](docs/hair.md) · [Submission](docs/submission.md) · [Demo video](https://youtu.be/DO1TYv7YM1s) · [Try the bot](https://t.me/HairCamBot)
 
 See the cut before you commit: on your face, in your city's weather, as it grows out, and in motion.
 
