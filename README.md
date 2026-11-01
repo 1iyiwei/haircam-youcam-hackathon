@@ -41,7 +41,7 @@ All YouCam results are cached under `cache/` by photo and parameters, so each on
 | `POST /api/generate` | `{ photoId, feature, params }` → `{ photoId, url }` |
 | `POST /api/humid-day` | `{ photoId, profile, climate }` |
 | `POST /api/grow-out` | `{ photoId }` |
-| `POST /api/animate` | `{ photoId }` → 5 s, 480p video `{ photoId, url }` |
+| `POST /api/animate` | `{ photoId, motion? }` → 5 s, 480p video `{ photoId, url }`; motions from `GET /api/motions` |
 | `GET /api/climate` | `?city=` |
 | `GET /api/stylists` | `?city=&style=&hairType=` |
 | `GET /api/products` | `?hairType=&frizziness=&density=&frizzRisk=` |

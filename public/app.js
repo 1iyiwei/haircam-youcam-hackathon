@@ -182,9 +182,10 @@ $('growBtn').addEventListener('click', (e) =>
 
 $('moveBtn').addEventListener('click', (e) =>
   busy(e.target, 'Filming a 5-second head turn (usually 5–8 minutes)…', async () => {
-    const out = await api('/api/animate', { photoId: state.tryOn.photoId });
+    const motion = $('motion');
+    const out = await api('/api/animate', { photoId: state.tryOn.photoId, motion: motion.value });
     const video = el('video', { src: out.url, controls: true, autoplay: true, loop: true, muted: true, playsInline: true });
-    $('extra').replaceChildren(el('figure', {}, video, el('figcaption', {}, `${state.tryOn.template.title}, from every side`)));
+    $('extra').replaceChildren(el('figure', {}, video, el('figcaption', {}, `${state.tryOn.template.title}: ${motion.selectedOptions[0].textContent.toLowerCase()}`)));
   }),
 );
 
@@ -221,3 +222,7 @@ function searchResults({ answer, results }) {
     results.map((r) => el('div', { className: 'result' }, el('a', { href: r.url, target: '_blank', rel: 'noopener' }, r.title), el('p', {}, r.snippet?.slice(0, 220)))),
   );
 }
+
+api('/api/motions').then((motions) =>
+  $('motion').replaceChildren(...motions.map((m) => el('option', { value: m.id }, m.label))),
+);

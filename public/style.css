@@ -36,6 +36,7 @@ label { display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; colo
 label.check { flex-direction: row; align-items: center; }
 input, select { font: inherit; padding: 6px 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); }
 .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; margin: 12px 0; }
+#tryCard .row { align-items: start; }
 button { font: inherit; padding: 8px 14px; border: 0; border-radius: 8px; background: var(--accent); color: #fff; cursor: pointer; }
 button:disabled { opacity: 0.5; cursor: default; }
 button.secondary { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
@@ -58,4 +59,7 @@ figcaption { text-align: center; color: var(--muted); font-size: 0.9rem; }
 .result { margin: 8px 0; }
 .result a { color: var(--accent); }
 .result p { margin: 2px 0 0; font-size: 0.9rem; color: var(--muted); }
-input[type="file"] { max-width: 100%; }
+input[type="file"] { max-width: 100%; min-width: 0; }
+.row > label { max-width: 100%; min-width: 0; }
+.combo { display: inline-flex; flex-direction: column; gap: 4px; }
+.combo select { font-size: 0.85rem; padding: 3px 6px; }

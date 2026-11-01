@@ -48,6 +48,10 @@ app.post('/api/analyze', route(async (req) => {
   return pipeline.analyze(req.body.photoId, req.body);
 }));
 
+app.get('/api/motions', (req, res) =>
+  res.json(Object.entries(pipeline.MOTIONS).map(([id, m]) => ({ id, label: m.label }))),
+);
+
 app.get('/api/templates/:feature', route((req) => pipeline.templates(req.params.feature)));
 
 app.post('/api/recommend', route(async (req) => {
@@ -75,7 +79,7 @@ app.post('/api/grow-out', route(async (req) => {
 // Costs more units than an image; only runs when the user asks.
 app.post('/api/animate', route(async (req) => {
   need(req.body, 'photoId');
-  return pipeline.animate(req.body.photoId);
+  return pipeline.animate(req.body.photoId, { motion: req.body.motion });
 }));
 
 app.get('/api/climate', route(async (req) => {

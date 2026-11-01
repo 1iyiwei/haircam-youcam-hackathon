@@ -15,7 +15,7 @@ For public project page
 
 ### Inspiration
 
-The female member of this team finds her hair challenging to deal with, especially in hot humid weather which tends to make her hair curl. We thus wanted to build something that would help people make better hair choices.
+One of our team members often finds it difficult to manage her hair, especially in hot, humid weather, which makes it curl. She also spends a lot of time searching for haircuts suited to her hair type and the climate, along with products that meet her needs. This inspired us to build a tool that helps people make more informed hair-care choices.
 
 ### What it does
 

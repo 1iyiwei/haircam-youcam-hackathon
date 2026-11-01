@@ -104,18 +104,47 @@ export function generate(photoId, feature, params = {}) {
   });
 }
 
-// A slow head turn shows the cut from the sides, which a still try-on can't.
-const MOTION_PROMPT =
-  'The person slowly turns their head about 30 degrees to the left, then about 30 degrees to the right, ' +
-  'then back to face the camera. Calm, steady motion. The hair stays neatly in place and moves only with the head. ' +
-  'Keep the face, hairstyle, hair color and background unchanged.';
-const MOTION_NEGATIVE =
-  'wind, hair blowing, hair flipping, fast motion, shaking, changing hairstyle, changing hair color, distorted face, extra people, low quality';
+// Motion presets for the try-on video. Each asks for movement that shows something a
+// still photo can't: the sides of the cut, how it moves, how it holds up.
+const KEEP = 'Keep the face, hairstyle, hair color and background unchanged.';
+const NEGATIVE = 'changing hairstyle, changing hair color, distorted face, extra people, low quality';
+export const MOTIONS = {
+  calm: {
+    label: 'Calm',
+    prompt:
+      'The person slowly turns their head about 30 degrees to the left, then about 30 degrees to the right, ' +
+      `then back to face the camera. Calm, steady motion. The hair stays neatly in place and moves only with the head. ${KEEP}`,
+    negative: `wind, hair blowing, hair flipping, fast motion, shaking, ${NEGATIVE}`,
+  },
+  lively: {
+    label: 'Lively',
+    prompt:
+      'The person smiles and turns their head naturally, laughing a little as if chatting with a friend. ' +
+      `Relaxed, natural movement; the hair moves softly with the head. ${KEEP}`,
+    negative: `wind, fast motion, shaking, ${NEGATIVE}`,
+  },
+  windy: {
+    label: 'Windy day',
+    prompt:
+      'A steady outdoor breeze blows from the side. The hair moves in the wind while the person keeps looking at the camera, ' +
+      `then the breeze calms and the hair settles back into shape. ${KEEP}`,
+    negative: `fast head motion, ${NEGATIVE}`,
+  },
+  active: {
+    label: 'Workout',
+    prompt:
+      'The person briskly shakes their head side to side and nods, as if after a workout. ' +
+      `The hair swings with the motion, then settles back into shape. ${KEEP}`,
+    negative: `wind, ${NEGATIVE}`,
+  },
+};
 
 /** Short video of a (try-on) photo, via YouCam AI Image to Video Generator V2. */
-export function animate(photoId, { duration = 5, resolution = 480 } = {}) {
+export function animate(photoId, { motion = 'calm', duration = 5, resolution = 480 } = {}) {
+  const preset = MOTIONS[motion];
+  if (!preset) throw Object.assign(new Error(`Unknown motion ${motion}`), { status: 400 });
   const feature = 'image-to-video/youcam';
-  return memo(keyOf('animate', photoId, duration, resolution, MOTION_PROMPT), async () => {
+  return memo(keyOf('animate', photoId, duration, resolution, preset.prompt), async () => {
     const result = await youcam.runTask(
       feature,
       {
@@ -123,13 +152,13 @@ export function animate(photoId, { duration = 5, resolution = 480 } = {}) {
         model: 'youcam-video-v2',
         resolution: String(resolution), // the API rejects a numeric resolution
         dst_duration: duration,
-        prompt: MOTION_PROMPT,
-        negative_prompt: MOTION_NEGATIVE,
+        prompt: preset.prompt,
+        negative_prompt: preset.negative,
       },
       { intervalMs: 5000, timeoutMs: 15 * 60_000 }, // typically takes 5-8 minutes
     );
     const videoId = await downloadPhoto(result.url, 'video/mp4');
-    return { photoId: videoId, url: `/api/photos/${videoId}`, sourcePhotoId: photoId, duration, resolution };
+    return { photoId: videoId, url: `/api/photos/${videoId}`, sourcePhotoId: photoId, motion, duration, resolution };
   });
 }
 
