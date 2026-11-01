@@ -56,21 +56,103 @@ async function resize(file, maxSide = 2048) {
 
 // Front photo is required; left/right 45° views are optional extras for hair type and frizz.
 const photoInputs = { photo: 'photoId', photoLeft: 'leftPhotoId', photoRight: 'rightPhotoId' };
-for (const [input, key] of Object.entries(photoInputs)) {
-  $(input).addEventListener('change', async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    status('Uploading…');
-    const blob = await resize(file);
-    const res = await fetch('/api/photos', { method: 'POST', headers: { 'Content-Type': 'image/jpeg' }, body: blob });
-    const { photoId, url } = await res.json();
-    state[key] = photoId;
-    $(`${input}Preview`).src = url;
-    $(`${input}Preview`).hidden = false;
-    $('analyzeBtn').disabled = !state.photoId;
-    status('');
+
+async function usePhoto(input, image) {
+  status('Uploading…');
+  const blob = await resize(image);
+  const res = await fetch('/api/photos', { method: 'POST', headers: { 'Content-Type': 'image/jpeg' }, body: blob });
+  const { photoId, url } = await res.json();
+  state[photoInputs[input]] = photoId;
+  $(`${input}Preview`).src = url;
+  $(`${input}Preview`).hidden = false;
+  $('analyzeBtn').disabled = !state.photoId;
+  status('');
+}
+
+for (const input of Object.keys(photoInputs)) {
+  $(input).addEventListener('change', (e) => e.target.files[0] && usePhoto(input, e.target.files[0]));
+}
+
+// Camera capture for customers without a photo ready. The oval guide matches YouCam's
+// "face fills 50–80% of the width" requirement.
+const CAMERA_HINTS = {
+  photo: 'Look straight at the camera and fit your face inside the oval, hairline visible.',
+  photoLeft: 'Turn your head about 45° to your left, keeping your face inside the oval.',
+  photoRight: 'Turn your head about 45° to your right, keeping your face inside the oval.',
+};
+const camera = { slot: null, stream: null, facing: 'user' };
+
+async function startCamera() {
+  camera.stream?.getTracks().forEach((t) => t.stop());
+  $('cameraError').hidden = true;
+  try {
+    camera.stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: camera.facing, width: { ideal: 1920 }, height: { ideal: 1080 } },
+      audio: false,
+    });
+    $('captureBtn').disabled = true;
+    $('cameraVideo').srcObject = camera.stream;
+    await waitForFrames($('cameraVideo'));
+    // Mirror the selfie preview so it feels like a mirror; the captured photo is not mirrored.
+    $('cameraVideo').classList.toggle('mirror', camera.facing === 'user');
+    const cams = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === 'videoinput');
+    $('switchCameraBtn').hidden = cams.length < 2;
+    $('captureBtn').disabled = !camera.stream;
+  } catch (err) {
+    $('captureBtn').disabled = true;
+    $('cameraError').textContent =
+      err.name === 'NotAllowedError'
+        ? 'Camera access was blocked. Allow it in your browser, or upload a photo instead.'
+        : `Could not open a camera (${err.name || err.message}). Upload a photo instead.`;
+    $('cameraError').hidden = false;
+  }
+}
+
+// Some cameras report a placeholder size before the first real frame arrives.
+async function waitForFrames(video, timeoutMs = 5000) {
+  const deadline = Date.now() + timeoutMs;
+  while (video.videoWidth < 16 && Date.now() < deadline) await new Promise((r) => setTimeout(r, 100));
+  if (video.videoWidth < 16) throw Object.assign(new Error('The camera did not start'), { name: 'NoFrames' });
+}
+
+function stopCamera() {
+  camera.stream?.getTracks().forEach((t) => t.stop());
+  camera.stream = null;
+}
+
+for (const btn of document.querySelectorAll('button.take')) {
+  btn.addEventListener('click', () => {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      status('This browser cannot open the camera here (it needs https or localhost). Upload a photo instead.');
+      return;
+    }
+    camera.slot = btn.dataset.slot;
+    $('cameraHint').textContent = CAMERA_HINTS[camera.slot];
+    $('camera').showModal();
+    startCamera();
   });
 }
+
+$('switchCameraBtn').addEventListener('click', () => {
+  camera.facing = camera.facing === 'user' ? 'environment' : 'user';
+  startCamera();
+});
+$('cancelCameraBtn').addEventListener('click', () => $('camera').close());
+$('camera').addEventListener('close', stopCamera);
+
+$('captureBtn').addEventListener('click', async () => {
+  // Crop the center 3:4 portrait, exactly what the viewfinder shows (object-fit: cover).
+  const video = $('cameraVideo');
+  const { videoWidth: vw, videoHeight: vh } = video;
+  if (vw < 16) return;
+  const cw = Math.min(vw, (vh * 3) / 4);
+  const ch = Math.min(vh, (vw * 4) / 3);
+  const canvas = Object.assign(document.createElement('canvas'), { width: Math.round(cw), height: Math.round(ch) });
+  canvas.getContext('2d').drawImage(video, (vw - cw) / 2, (vh - ch) / 2, cw, ch, 0, 0, cw, ch);
+  const blob = await new Promise((r) => canvas.toBlob(r, 'image/jpeg', 0.92));
+  $('camera').close();
+  await usePhoto(camera.slot, blob);
+});
 
 $('analyzeBtn').addEventListener('click', (e) =>
   busy(e.target, 'Analyzing face shape, hair type, length, frizz and density…', async () => {

@@ -17,15 +17,24 @@
       <h2>1. You</h2>
       <p class="muted">Face the camera straight on, with your face filling about half to most of the frame width and your hairline visible.</p>
       <div class="row">
-        <label>Front selfie
-          <input id="photo" type="file" accept="image/jpeg,image/png" />
-        </label>
-        <label>Left 45° (optional)
-          <input id="photoLeft" type="file" accept="image/jpeg,image/png" />
-        </label>
-        <label>Right 45° (optional)
-          <input id="photoRight" type="file" accept="image/jpeg,image/png" />
-        </label>
+        <div class="slot">
+          <label>Front selfie
+            <input id="photo" type="file" accept="image/jpeg,image/png" />
+          </label>
+          <button type="button" class="secondary take" data-slot="photo">Take photo</button>
+        </div>
+        <div class="slot">
+          <label>Left 45° (optional)
+            <input id="photoLeft" type="file" accept="image/jpeg,image/png" />
+          </label>
+          <button type="button" class="secondary take" data-slot="photoLeft">Take photo</button>
+        </div>
+        <div class="slot">
+          <label>Right 45° (optional)
+            <input id="photoRight" type="file" accept="image/jpeg,image/png" />
+          </label>
+          <button type="button" class="secondary take" data-slot="photoRight">Take photo</button>
+        </div>
       </div>
       <p class="muted">Side photos unlock hair type and frizz detection.</p>
       <div class="row">
@@ -89,6 +98,19 @@
     </section>
 
   </main>
+  <dialog id="camera">
+    <p id="cameraHint"></p>
+    <div class="viewfinder">
+      <video id="cameraVideo" autoplay playsinline muted></video>
+      <div class="guide" aria-hidden="true"></div>
+    </div>
+    <p id="cameraError" class="con" hidden></p>
+    <div class="row">
+      <button type="button" id="captureBtn">Capture</button>
+      <button type="button" id="switchCameraBtn" class="secondary" hidden>Switch camera</button>
+      <button type="button" id="cancelCameraBtn" class="secondary">Cancel</button>
+    </div>
+  </dialog>
   <script type="module" src="app.js"></script>
 </body>
 </html>

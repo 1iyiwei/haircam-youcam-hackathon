@@ -25,6 +25,8 @@ One of our team members often finds it difficult to manage her hair, especially 
 
 Male and female hairstyles
 
+Need an option to capture photo in addition to upload
+
 ### Accomplishments that we're proud of
 
 ### What we learned
@@ -33,6 +35,8 @@ Male and female hairstyles
 
 \* Built with
 You can add up to 25 tags.
+
+YouCam, Claude Code, 
 
 "Try it out" links
 Add links where people can try your project or see your code.
