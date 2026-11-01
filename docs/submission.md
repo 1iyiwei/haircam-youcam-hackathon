@@ -99,12 +99,6 @@ URL for demo site, app store listing, GitHub repo, etc.
 
 https://t.me/HairCamBot
 
-<!--
-https://haircam-youcam-hackathon.onrender.com/
-
-TODO: Render demo URL (passcode-protected; passcode in "Additional info")
--->
-
 ## Project Media
 
 Image gallery
@@ -210,4 +204,4 @@ Frustrating: a few requirements only surfaced at runtime. Hair type and frizz de
 
 Share a link to any social posts about your project.
 
-TODO
+https://lnkd.in/p/gH55sHpV
