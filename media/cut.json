@@ -1,0 +1,13 @@
+{
+ "sources": {"R": "recording_v1.mp4"},
+ "size": [756, 766], "fps": 30, "background": "0x0f1115",
+ "segments": [
+  {"src": "R", "in": 0.0, "out": 2.0, "caption": "HairCam: a virtual hairstylist", "note": "upload photo"},
+  {"src": "R", "in": 2.0, "out": 21.0, "speed": 2,"note": "upload photo"},
+  {"src": "R", "in": 60.0, "out": 206.0, "speed": 2, "note": "styles"},
+  {"src": "R", "in": 227.0, "out": 294.0, "speed": 2, "note": "show me an animation"},
+  {"src": "R", "in": 338.0, "out": 390.0, "speed": 2, "note": "recommendations"},
+  {"src": "R", "in": 968.0, "out": 970.0, "note": "animation"},
+  {"src": "R", "in": 1025.0, "out": 1044.0, "note": "animation"}
+ ]
+}
