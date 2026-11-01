@@ -83,7 +83,9 @@ YouCam API, Perfect Corp, Claude Code, JavaScript, Node.js, Express, HTML, CSS, 
 Add links where people can try your project or see your code.
 URL for demo site, app store listing, GitHub repo, etc.
 
-https://github.com/1iyiwei/haircam-youcam-hackathon
+https://t.me/HairCamBot
+
+https://haircam-youcam-hackathon.onrender.com/
 
 TODO: Render demo URL (passcode-protected; passcode in "Additional info")
 

@@ -21,28 +21,45 @@ export function climate(city) {
     );
     const place = geo.results?.[0];
     if (!place) throw Object.assign(new Error(`Could not find "${city}"`), { status: 404 });
-    const wx = await getJson(
-      `https://api.open-meteo.com/v1/forecast?${new URLSearchParams({
-        latitude: place.latitude,
-        longitude: place.longitude,
-        hourly: 'relative_humidity_2m,dew_point_2m,temperature_2m',
-        forecast_days: '7',
-        timezone: 'auto',
-      })}`,
-    );
-    const avg = (xs) => xs.reduce((a, b) => a + b, 0) / xs.length;
-    const humidity = Math.round(avg(wx.hourly.relative_humidity_2m));
-    const dewPoint = Math.round(avg(wx.hourly.dew_point_2m) * 10) / 10;
-    const temperature = Math.round(avg(wx.hourly.temperature_2m) * 10) / 10;
-    const frizzRisk = dewPoint >= 18 ? 'high' : dewPoint >= 10 ? 'medium' : 'low';
-    return {
-      city: [...new Set([place.name, place.admin1, place.country].filter(Boolean))].join(', '),
-      humidity,
-      dewPoint,
-      temperature,
-      frizzRisk,
-    };
+    const name = [...new Set([place.name, place.admin1, place.country].filter(Boolean))].join(', ');
+    return forecast(place.latitude, place.longitude, name);
   }, 6 * HOUR);
+}
+
+/** Same as climate(), for a shared location (e.g. a Telegram location pin). */
+export function climateAt(latitude, longitude, name) {
+  const lat = Math.round(latitude * 100) / 100;
+  const lon = Math.round(longitude * 100) / 100;
+  return memo(keyOf('climateAt', lat, lon), async () => {
+    const wx = await forecast(lat, lon, name);
+    if (name) return wx;
+    // Reverse geocoding: nearest named place, for captions and stylist searches.
+    const geo = await getJson(
+      `https://nominatim.openstreetmap.org/reverse?${new URLSearchParams({ lat, lon, format: 'json', zoom: '10', 'accept-language': 'en' })}`,
+      { headers: { 'User-Agent': 'HairCam hackathon demo' } },
+    ).catch(() => null);
+    const a = geo?.address || {};
+    const city = [a.city || a.town || a.village || a.county, a.state, a.country].filter(Boolean);
+    return { ...wx, city: [...new Set(city)].join(', ') || `${lat}, ${lon}` };
+  }, 6 * HOUR);
+}
+
+async function forecast(latitude, longitude, city) {
+  const wx = await getJson(
+    `https://api.open-meteo.com/v1/forecast?${new URLSearchParams({
+      latitude,
+      longitude,
+      hourly: 'relative_humidity_2m,dew_point_2m,temperature_2m',
+      forecast_days: '7',
+      timezone: 'auto',
+    })}`,
+  );
+  const avg = (xs) => xs.reduce((a, b) => a + b, 0) / xs.length;
+  const humidity = Math.round(avg(wx.hourly.relative_humidity_2m));
+  const dewPoint = Math.round(avg(wx.hourly.dew_point_2m) * 10) / 10;
+  const temperature = Math.round(avg(wx.hourly.temperature_2m) * 10) / 10;
+  const frizzRisk = dewPoint >= 18 ? 'high' : dewPoint >= 10 ? 'medium' : 'low';
+  return { city, humidity, dewPoint, temperature, frizzRisk };
 }
 
 async function tavily(query, { maxResults = 6, ...opts } = {}) {

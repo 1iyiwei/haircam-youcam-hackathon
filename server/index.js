@@ -6,6 +6,7 @@ import { savePhoto, photoFile } from './cache.js';
 import * as pipeline from './pipeline.js';
 import { recommend } from './recommend.js';
 import * as local from './local.js';
+import { startTelegram } from './telegram.js';
 
 const app = express();
 
@@ -137,3 +138,6 @@ app.get('/api/products', route((req) => local.products(req.query)));
 
 const port = Number(process.env.PORT) || 3000;
 app.listen(port, () => console.log(`HairCam on http://localhost:${port}`));
+
+// Only one process may poll a bot: set TELEGRAM_POLLING=off locally while Render runs it.
+if (process.env.TELEGRAM_POLLING !== 'off') startTelegram().catch((err) => console.error('Telegram:', err.message));
