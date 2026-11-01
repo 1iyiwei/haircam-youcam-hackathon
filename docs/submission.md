@@ -1,4 +1,8 @@
 # Submission
+
+Created by Li-Yi Wei and Florence Chao with assistance from Claude Code.
+Florence Chao originated the idea of a hair assistant; Li-Yi Wei designed and implemented the prototype.
+
 ## General info
 
 \* Project name
