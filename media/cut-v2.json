@@ -1,0 +1,12 @@
+{
+ "sources": {"R": "recording_v2.mp4"},
+ "size": [756, 756], "fps": 30, "background": "0x0f1115",
+ "segments": [
+  {"src": "R", "in": 0.0, "out": 11.0, "speed": 2.2, "caption": "HairCam: a virtual hairstylist"},
+  {"src": "R", "in": 11.0, "out": 142, "speed": 2.2},
+  {"src": "R", "in": 142.0, "out": 148.0, "speed": 2.2, "caption": "Photo generation with YouCam API"},
+  {"src": "R", "in": 148.0, "out": 290.0, "speed": 2.2},
+  {"src": "R", "in": 290.0, "out": 298.0, "speed": 2.2, "caption": "Video generation with YouCam API"},
+  {"src": "R", "in": 298.0, "out": 396.0, "speed": 2.2}
+ ]
+}
