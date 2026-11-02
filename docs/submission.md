@@ -206,3 +206,6 @@ Frustrating: a few requirements only surfaced at runtime. Hair type and frizz de
 Share a link to any social posts about your project.
 
 https://lnkd.in/p/gH55sHpV
+
+With just one day left in the YouCam API Skin AI & eCommerce VTO Hackathon, I asked Florence Chao, who knows this domain far better than I do, to suggest a problem worth solving.
+Unlike makeup or clothing, a bad haircut can take months to grow out. HairCam lets you preview hairstyles matched to your weather and lifestyle, then connects you with the right stylist and products. Watch the short demo: https://youtu.be/DO1TYv7YM1s.
