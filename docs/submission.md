@@ -20,7 +20,7 @@ For public project page
 
 ### Inspiration
 
-One of our team members often finds it difficult to manage her hair, especially in hot, humid weather, which makes it curl. She also spends a lot of time searching for haircuts suited to her hair type and the climate, along with products that meet her needs. This inspired us to build a tool that helps people make more informed hair-care choices.
+One of our team members often struggles to manage her hair, especially in hot, humid weather that makes it curl. She also spends a lot of time looking for haircuts suited to her hair type and local climate, as well as products that meet her needs. Her experience inspired us to build a tool that helps people make more informed hair-care choices.
 
 Haircuts are also the least reversible beauty decision. Makeup washes off and clothes can be returned, but hair grows only about 1.25 cm a month. A salon photo shows the cut on its best day, not on a humid Tuesday or three months later, and showing a stylist a photo of someone else's hair rarely works.
 
@@ -78,7 +78,7 @@ HairCam is a virtual hairstylist you chat with on Telegram ([@HairCamBot](https:
 - Dew point predicts frizz better than relative humidity alone.
 - Image-to-video models follow motion words very literally; a single word like "breeze" can change the whole result.
 - Chaining generative effects (try-on, then humidity, then motion) creates previews no single API call provides.
-- A website isn't really the best medium for a virtual hair assistant, so we switched to a chatbot later which works much more naturally in an iterative conversation style.
+- A website isn't really the best medium for a virtual hair assistant, so we later switched to a chatbot, which works much more naturally for iterative conversations.
 
 ### What's next for HairCam
 
@@ -136,6 +136,7 @@ Upload a file as part of your submission - e.g., zip, pdf, word, apk, etc. To up
 Sponsor / Special Prizes
 
 -   Sponsor / Special Prizes
+
 Women in Tech Special Award
 
 \* Submitter type
